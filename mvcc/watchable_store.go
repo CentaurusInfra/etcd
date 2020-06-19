@@ -69,13 +69,17 @@ type watchableStore struct {
 // cancel operations.
 type cancelFunc func()
 
-func New(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig) ConsistentWatchableKV {
-	return newWatchableStore(lg, b, le, ig, cfg)
+func New(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig, clusterId uint8) ConsistentWatchableKV {
+	return newWatchableStoreWithClusterId(lg, b, le, ig, cfg, clusterId)
 }
 
 func newWatchableStore(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig) *watchableStore {
+	return newWatchableStoreWithClusterId(lg, b, le, ig, cfg, 0)
+}
+
+func newWatchableStoreWithClusterId(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig, clusterId uint8) *watchableStore {
 	s := &watchableStore{
-		store:    NewStore(lg, b, le, ig, cfg),
+		store:    NewStoreWithClusterId(lg, b, le, ig, cfg, clusterId),
 		victimc:  make(chan struct{}, 1),
 		unsynced: newWatcherGroup(),
 		synced:   newWatcherGroup(),

@@ -50,6 +50,7 @@ const (
 	ClusterStateFlagExisting = "existing"
 
 	DefaultName                  = "default"
+	DefaultClusterId             = 0
 	DefaultMaxSnapshots          = 5
 	DefaultMaxWALs               = 5
 	DefaultMaxTxnOps             = uint(128)
@@ -115,9 +116,10 @@ func init() {
 
 // Config holds the arguments for configuring an etcd server.
 type Config struct {
-	Name   string `json:"name"`
-	Dir    string `json:"data-dir"`
-	WalDir string `json:"wal-dir"`
+	Name      string `json:"name"`
+	ClusterId uint   `json:"cluster-id"`
+	Dir       string `json:"data-dir"`
+	WalDir    string `json:"wal-dir"`
 
 	SnapshotCount uint64 `json:"snapshot-count"`
 
@@ -375,7 +377,8 @@ func NewConfig() *Config {
 		MaxSnapFiles: DefaultMaxSnapshots,
 		MaxWalFiles:  DefaultMaxWALs,
 
-		Name: DefaultName,
+		Name:      DefaultName,
+		ClusterId: DefaultClusterId,
 
 		SnapshotCount:          etcdserver.DefaultSnapshotCount,
 		SnapshotCatchUpEntries: etcdserver.DefaultSnapshotCatchUpEntries,

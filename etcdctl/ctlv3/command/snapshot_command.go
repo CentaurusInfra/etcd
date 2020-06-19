@@ -17,6 +17,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"github.com/coreos/pkg/capnslog"
 	"path/filepath"
 	"strings"
 
@@ -38,7 +39,10 @@ var (
 	restoreWalDir       string
 	restorePeerURLs     string
 	restoreName         string
+	restoreClusterId    uint8
 	skipHashCheck       bool
+
+	plog = capnslog.NewPackageLogger("go.etcd.io/etcd", "mvcc")
 )
 
 // NewSnapshotCommand returns the cobra command for "snapshot".
@@ -85,6 +89,7 @@ func NewSnapshotRestoreCommand() *cobra.Command {
 	cmd.Flags().StringVar(&restorePeerURLs, "initial-advertise-peer-urls", defaultInitialAdvertisePeerURLs, "List of this member's peer URLs to advertise to the rest of the cluster")
 	cmd.Flags().StringVar(&restoreName, "name", defaultName, "Human-readable name for this member")
 	cmd.Flags().BoolVar(&skipHashCheck, "skip-hash-check", false, "Ignore snapshot integrity hash value (required if copied from data directory)")
+	cmd.Flags().Uint8Var(&restoreClusterId, "cluster-id", 0, "Cluster id")
 
 	return cmd
 }
@@ -151,11 +156,17 @@ func snapshotRestoreCommandFunc(cmd *cobra.Command, args []string) {
 		walDir = filepath.Join(dataDir, "member", "wal")
 	}
 
+	if restoreClusterId > 63 {
+		err := fmt.Errorf("Currently only support cluster id 0~63")
+		ExitWithError(ExitBadArgs, err)
+	}
+
 	lg, err := zap.NewProduction()
 	if err != nil {
 		ExitWithError(ExitError, err)
 	}
 	sp := snapshot.NewV3(lg)
+	fmt.Printf("snapshot restore with cluster id %v", restoreClusterId)
 
 	if err := sp.Restore(snapshot.RestoreConfig{
 		SnapshotPath:        args[0],
@@ -165,6 +176,7 @@ func snapshotRestoreCommandFunc(cmd *cobra.Command, args []string) {
 		PeerURLs:            strings.Split(restorePeerURLs, ","),
 		InitialCluster:      restoreCluster,
 		InitialClusterToken: restoreClusterToken,
+		ClusterId:           restoreClusterId,
 		SkipHashCheck:       skipHashCheck,
 	}); err != nil {
 		ExitWithError(ExitError, err)

@@ -33,7 +33,11 @@ import (
 
 // ServerConfig holds the configuration of etcd as taken from the command line or discovery.
 type ServerConfig struct {
-	Name           string
+	Name string
+
+	// ClusterId is the cluster id - used to generated revision # for customized ETCD cluster
+	// Currently support only 0~63
+	ClusterId      uint8
 	DiscoveryURL   string
 	DiscoveryProxy string
 	ClientURLs     types.URLs

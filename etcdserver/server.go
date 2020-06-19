@@ -540,7 +540,7 @@ func NewServer(cfg ServerConfig) (srv *EtcdServer, err error) {
 			CheckpointInterval:         cfg.LeaseCheckpointInterval,
 			ExpiredLeasesRetryInterval: srv.Cfg.ReqTimeout(),
 		})
-	srv.kv = mvcc.New(srv.getLogger(), srv.be, srv.lessor, &srv.consistIndex, mvcc.StoreConfig{CompactionBatchLimit: cfg.CompactionBatchLimit})
+	srv.kv = mvcc.New(srv.getLogger(), srv.be, srv.lessor, &srv.consistIndex, mvcc.StoreConfig{CompactionBatchLimit: cfg.CompactionBatchLimit}, cfg.ClusterId)
 	if beExist {
 		kvindex := srv.kv.ConsistentIndex()
 		// TODO: remove kvindex != 0 checking when we do not expect users to upgrade

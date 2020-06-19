@@ -79,11 +79,12 @@ func NewV3(lg *zap.Logger) Manager {
 type v3Manager struct {
 	lg *zap.Logger
 
-	name    string
-	dbPath  string
-	walDir  string
-	snapDir string
-	cl      *membership.RaftCluster
+	name      string
+	clusterId uint8
+	dbPath    string
+	walDir    string
+	snapDir   string
+	cl        *membership.RaftCluster
 
 	skipHashCheck bool
 }
@@ -229,6 +230,9 @@ type RestoreConfig struct {
 	InitialCluster string
 	// InitialClusterToken is the initial cluster token for etcd cluster during restore bootstrap.
 	InitialClusterToken string
+	// ClusterId is the cluster id - used to generated revision # for customized ETCD cluster
+	// Currently support only 0~63
+	ClusterId uint8
 
 	// SkipHashCheck is "true" to ignore snapshot integrity hash value
 	// (required if copied from data directory).
@@ -280,6 +284,7 @@ func (s *v3Manager) Restore(cfg RestoreConfig) error {
 
 	s.name = cfg.Name
 	s.dbPath = cfg.SnapshotPath
+	s.clusterId = cfg.ClusterId
 	s.walDir = walDir
 	s.snapDir = filepath.Join(dataDir, "member", "snap")
 	s.skipHashCheck = cfg.SkipHashCheck
@@ -384,7 +389,7 @@ func (s *v3Manager) saveDB() error {
 	// a lessor never timeouts leases
 	lessor := lease.NewLessor(s.lg, be, lease.LessorConfig{MinLeaseTTL: math.MaxInt64})
 
-	mvs := mvcc.NewStore(s.lg, be, lessor, (*initIndex)(&commit), mvcc.StoreConfig{CompactionBatchLimit: math.MaxInt32})
+	mvs := mvcc.NewStoreWithClusterId(s.lg, be, lessor, (*initIndex)(&commit), mvcc.StoreConfig{CompactionBatchLimit: math.MaxInt32}, s.clusterId)
 	txn := mvs.Write(traceutil.TODO())
 	btx := be.BatchTx()
 	del := func(k, v []byte) error {

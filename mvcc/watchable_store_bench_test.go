@@ -28,7 +28,7 @@ import (
 
 func BenchmarkWatchableStorePut(b *testing.B) {
 	be, tmpPath := backend.NewDefaultTmpBackend()
-	s := New(zap.NewExample(), be, &lease.FakeLessor{}, nil, StoreConfig{})
+	s := New(zap.NewExample(), be, &lease.FakeLessor{}, nil, StoreConfig{}, 0)
 	defer cleanup(s, be, tmpPath)
 
 	// arbitrary number of bytes
@@ -49,7 +49,7 @@ func BenchmarkWatchableStorePut(b *testing.B) {
 func BenchmarkWatchableStoreTxnPut(b *testing.B) {
 	var i fakeConsistentIndex
 	be, tmpPath := backend.NewDefaultTmpBackend()
-	s := New(zap.NewExample(), be, &lease.FakeLessor{}, &i, StoreConfig{})
+	s := New(zap.NewExample(), be, &lease.FakeLessor{}, &i, StoreConfig{}, 0)
 	defer cleanup(s, be, tmpPath)
 
 	// arbitrary number of bytes

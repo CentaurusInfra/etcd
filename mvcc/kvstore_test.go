@@ -796,8 +796,9 @@ func TestConcurrentReadTxAndWrite(t *testing.T) {
 func TestTimeElapsedForGetCurrentRevisionBase(t *testing.T) {
 	testTimes := int64(1000000) // 1M
 	startTime := time.Now().UnixNano()
+	store := store{}
 	for i := int64(0); i < testTimes; i++ {
-		getCurrentRevisionBase()
+		store.getCurrentRevisionBase()
 	}
 	endTime := time.Now().UnixNano()
 	nanoSecElapsed := endTime - startTime

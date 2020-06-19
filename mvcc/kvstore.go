@@ -78,6 +78,10 @@ type store struct {
 	ReadView
 	WriteView
 
+	// clusterId is the cluster id - used to generated revision # for customized ETCD cluster
+	// Currently support only 0~63
+	clusterId uint8
+
 	// consistentIndex caches the "consistent_index" key's value. Accessed
 	// through atomics so must be 64-bit aligned.
 	consistentIndex uint64
@@ -122,18 +126,24 @@ type store struct {
 // NewStore returns a new store. It is useful to create a store inside
 // mvcc pkg. It should only be used for testing externally.
 func NewStore(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig) *store {
+	return NewStoreWithClusterId(lg, b, le, ig, cfg, 0)
+}
+
+// NewStoreWithClusterId returns a new store with specified clusterId. It is useful to create a store inside
+// mvcc pkg. It should only be used for testing externally.
+func NewStoreWithClusterId(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentIndexGetter, cfg StoreConfig, clusterId uint8) *store {
 	if cfg.CompactionBatchLimit == 0 {
 		cfg.CompactionBatchLimit = defaultCompactBatchLimit
 	}
 	s := &store{
-		cfg:     cfg,
-		b:       b,
-		ig:      ig,
-		kvindex: newTreeIndex(lg),
+		cfg:       cfg,
+		b:         b,
+		ig:        ig,
+		kvindex:   newTreeIndex(lg),
+		clusterId: clusterId,
 
 		le: le,
 
-		currentRev:     getCurrentRevisionBase(),
 		compactMainRev: -1,
 
 		bytesBuf8: make([]byte, 8),
@@ -143,6 +153,8 @@ func NewStore(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentI
 
 		lg: lg,
 	}
+	s.currentRev = s.getCurrentRevisionBase()
+
 	plog.Printf("New ETCD store. Rev %d", s.currentRev)
 	s.ReadView = &readView{s}
 	s.WriteView = &writeView{s}
@@ -167,15 +179,12 @@ func NewStore(lg *zap.Logger, b backend.Backend, le lease.Lessor, ig ConsistentI
 	return s
 }
 
-// TODO: read from config
-const clusterId = 1
-
-func getCurrentRevisionBase() int64 {
+func (s *store) getCurrentRevisionBase() int64 {
 	newRevBase := time.Now().UnixNano() / 1000000
 	// convert to millisecond
 	//newRevBase = newRevBase * 1000
 	// Add cluster id: assume <= 64 clusters
-	newRevBase = newRevBase << 6 + clusterId
+	newRevBase = newRevBase<<6 + int64(s.clusterId)
 	// Allow 1024 * 8 revision per milliseconds
 	newRevBase = newRevBase << 13
 	if newRevBase < 0 {

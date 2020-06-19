@@ -105,7 +105,7 @@ func (tw *storeTxnWrite) End() {
 		tw.s.saveIndex(tw.tx)
 		// hold revMu lock to prevent new read txns from opening until writeback.
 		tw.s.revMu.Lock()
-		newRevBase := getCurrentRevisionBase()
+		newRevBase := tw.s.getCurrentRevisionBase()
 		if newRevBase == tw.s.writePerMSRev {
 			tw.s.countWritePerMS++
 			if tw.s.countWritePerMS >= 4096 {

@@ -163,6 +163,7 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 
 	srvcfg := etcdserver.ServerConfig{
 		Name:                       cfg.Name,
+		ClusterId:                  uint8(cfg.ClusterId),
 		ClientURLs:                 cfg.ACUrls,
 		PeerURLs:                   cfg.APUrls,
 		DataDir:                    cfg.Dir,
@@ -240,6 +241,7 @@ func StartEtcd(inCfg *Config) (e *Etcd, err error) {
 	if e.cfg.logger != nil {
 		e.cfg.logger.Info(
 			"now serving peer/client/metrics",
+			zap.Uint("cluster-id", e.cfg.ClusterId),
 			zap.String("local-member-id", e.Server.ID().String()),
 			zap.Strings("initial-advertise-peer-urls", e.cfg.getAPURLs()),
 			zap.Strings("listen-peer-urls", e.cfg.getLPURLs()),
@@ -274,6 +276,7 @@ func print(lg *zap.Logger, ec Config, sc etcdserver.ServerConfig, memberInitiali
 			}
 		}
 		plog.Infof("advertise client URLs = %s", sc.ClientURLs)
+		plog.Infof("cluster id = %d", sc.ClusterId)
 		if memberInitialized {
 			plog.Infof("initial advertise peer URLs = %s", sc.PeerURLs)
 			plog.Infof("initial cluster = %s", sc.InitialPeerURLsMap)
@@ -327,6 +330,7 @@ func print(lg *zap.Logger, ec Config, sc etcdserver.ServerConfig, memberInitiali
 			zap.String("initial-cluster", sc.InitialPeerURLsMap.String()),
 			zap.String("initial-cluster-state", ec.ClusterState),
 			zap.String("initial-cluster-token", sc.InitialClusterToken),
+			zap.Uint8("cluster-id", sc.ClusterId),
 			zap.Int64("quota-size-bytes", quota),
 			zap.Bool("pre-vote", sc.PreVote),
 			zap.Bool("initial-corrupt-check", sc.InitialCorruptCheck),
