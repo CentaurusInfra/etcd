@@ -160,6 +160,15 @@ func warnOfExpensiveGenericRequest(lg *zap.Logger, now time.Time, reqStringer fm
 			plog.Warningf("%srequest %q with result %q took too long (%v) to execute", prefix, reqStringer.String(), result, d)
 		}
 		slowApplies.Inc()
+	} else {
+		var result string
+		if err != nil {
+			result = fmt.Sprintf("error:%v", err)
+		} else {
+			result = resp
+		}
+		plog.Infof("%srequest %q with result %q took (%v) to execute", prefix, reqStringer.String(), result, d)
+
 	}
 }
 
