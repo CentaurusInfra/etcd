@@ -151,7 +151,7 @@ func logUnaryRequestStats(ctx context.Context, lg *zap.Logger, info *grpc.UnaryS
 func logGenericRequestStats(lg *zap.Logger, startTime time.Time, duration time.Duration, remote string, responseType string,
 	reqCount int64, reqSize int, respCount int64, respSize int, reqContent string) {
 	if lg == nil {
-		plog.Debugf("start time = %v, "+
+		plog.Infof("start time = %v, "+
 			"time spent = %v, "+
 			"remote = %s, "+
 			"response type = %s, "+
